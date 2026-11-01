@@ -1,0 +1,25 @@
+{
+  "name": "@zend/appkit",
+  "version": "0.1.0",
+  "description": "Build ZApps: Sign in with Zend, payments, money links and interactions.",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./server": "./dist/server.js"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p .",
+    "site": "npm run build && rm -rf site && mkdir -p site/sdk && cp dist/index.js site/sdk/ && cp -r examples/coinflip site/coinflip && printf '/*\\n  X-Content-Type-Options: nosniff\\n  Content-Security-Policy: frame-ancestors https://app.usezend.app\\n' > site/_headers",
+    "deploy:pages": "npm run site && npx wrangler pages deploy site --project-name zapps-examples --branch main"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}

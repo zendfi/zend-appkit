@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- Minimal ZApp: flip a coin with the person you're chatting with, post the result.
+     Manifest: permissions [post_card], cardTypes [result], entry "/coinflip/",
+     chatActions [{ id: "flip", label: "Flip", sheet: "/coinflip/", interaction: "flip" }],
+     interactionTypes.flip: states [sent, resolved, expired], initial sent,
+     transitions { sent: [resolved, expired] }, terminal [resolved, expired].
+     Demo only: the page picks the winner. A real game decides results on its server. -->
+<html>
+<head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flip</title></head>
+<body style="font-family:system-ui;text-align:center;padding:40px">
+  <h1>🪙 Flip</h1>
+  <button id="flip" style="font-size:20px;padding:12px 28px" disabled>Flip</button>
+  <p id="out"></p>
+  <script type="module">
+    import { init } from "../sdk/index.js";
+    const zend = init();
+    const out = document.getElementById("out");
+    const btn = document.getElementById("flip");
+    let id = zend.launch.interaction;
+    const me = await zend.identity.get().catch((e) => { out.textContent = "Open this from a chat in Zend."; return null; });
+
+    // "Flip again" on a result card: start a new flip with the same people.
+    if (me && !id && zend.launch.start === "flip" && zend.launch.from) {
+      try {
+        const prev = await zend.interaction.get(zend.launch.from);
+        const others = prev.participants.filter((p) => p.appUserId !== me.appUserId).map((p) => p.appUserId);
+        id = (await zend.interaction.create({ type: "flip", participants: others })).id;
+      } catch (e) { out.textContent = "Couldn't start a new flip."; }
+    }
+    if (me && id) btn.disabled = false;
+    else if (me && !out.textContent) out.textContent = "Open me from a chat: + → Apps → Flip.";
+
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        const i = await zend.interaction.get(id);
+        const other = i.participants.find((p) => p.appUserId !== me.appUserId);
+        const winner = Math.random() < 0.5 ? me.name : (other?.name ?? "them");
+        await zend.interaction.update(id, { state: "resolved", data: { winner }, idempotencyKey: `${id}:end` });
+        await zend.postCard({
+          interactionId: id, template: "result", placement: "chat", idempotencyKey: `${id}:card`,
+          slots: { title: `${winner} won the coin flip`, emoji: "🪙",
+                   buttons: [{ label: "Flip again", action: "start_interaction", type: "flip" }] },
+        }).catch(() => {});
+        out.textContent = `${winner} wins!`;
+        setTimeout(() => zend.close({ winner }), 1500);
+      } catch (e) {
+        out.textContent = e.code === "INTERACTION_FINISHED" ? "This flip is done. Tap Flip again on the card." : "That didn't go through. Try again.";
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
