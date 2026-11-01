@@ -1,0 +1,9 @@
+{
+  "app": "coinflip", "name": "Coin Flip", "version": "0.1.0",
+  "origins": ["https://zapps-examples.pages.dev"], "entry": "/coinflip/",
+  "permissions": ["post_card"], "cardTypes": ["result"],
+  "chatActions": [{ "id": "flip", "label": "Flip", "sheet": "/coinflip/", "interaction": "flip" }],
+  "interactionTypes": { "flip": {
+    "states": ["sent", "resolved", "expired"], "initial": "sent",
+    "transitions": { "sent": ["resolved", "expired"] }, "terminal": ["resolved", "expired"] } }
+}
