@@ -21,4 +21,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "3.90.0"
+          # Creates the project on first run; later runs see "already exists" and carry on.
+          preCommands: npx wrangler pages project create zapps-examples --production-branch main || true
           command: pages deploy site --project-name zapps-examples --branch main
