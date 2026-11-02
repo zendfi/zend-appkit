@@ -5,7 +5,7 @@ and your cards, should sound like messaging, not banking or crypto.
 
 ## Avoid
 
-Sui, blockchain, chain, on-chain, crypto, token, coin, USDC, stablecoin, wallet, wallet address,
+Sui, blockchain, chain, on-chain, crypto, token, USDC, stablecoin, wallet, wallet address,
 gas, network fee, transaction, signature, key, seed, escrow, contract, zkLogin.
 
 Zend rejects the main ones in manifest labels and card text.

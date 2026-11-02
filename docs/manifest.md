@@ -64,4 +64,4 @@ Consent toggles start off. Users can change them in Settings → Connected apps.
 ## Plain-language check
 
 `name`, chat action labels, and card text can't contain: sui, blockchain, chain, crypto, token,
-coin, usdc, stablecoin, gas, wallet, escrow, contract, zklogin, seed. See [copy-guide.md](copy-guide.md).
+usdc, stablecoin, gas, wallet, escrow, contract, zklogin, seed. See [copy-guide.md](copy-guide.md).
