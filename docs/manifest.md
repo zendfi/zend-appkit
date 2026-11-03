@@ -22,6 +22,11 @@ Unknown top-level fields are rejected.
 | `adapters` | string[] | no | Must be empty for now |
 | `webhook` | string | no | `https` URL |
 | `limits` | object | no | Only `cardsPerUserPerDay`, ≤ your tier |
+| `description` | string | public apps | One line for Discover, ≤ 140 chars, plain language |
+| `category` | string | no | `games`, `friends`, `events`, `community` or `tools` (Discover section) |
+| `developer` | object | public apps | `{ name, support, privacy }` (support: email or https; privacy: https) |
+| `results` | `none` \| `app` \| `checked` | no (`none`) | How results are decided; required (not `none`) with `prize` |
+| `resolverKey` | hex string | with `prize` | 32-byte Ed25519 public key that signs prize results |
 
 ## Permissions
 
@@ -35,6 +40,8 @@ Unknown top-level fields are rejected.
 | `email` | email in `verifySession` | "See your email" toggle |
 | `wallet_address` | address in `verifySession` | "Send money straight to you" toggle |
 | `contacts` | reserved | "See people you choose to share" toggle |
+| `attest` | `attest` | none |
+| `prize` | `prize.*` | per prize |
 
 Consent toggles start off. Users can change them in Settings → Connected apps.
 

@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "tsc -p .",
-    "site": "npm run build && rm -rf site && mkdir -p site/sdk && cp dist/index.js site/sdk/ && cp -r examples/coinflip site/coinflip && printf '/*\\n  X-Content-Type-Options: nosniff\\n  Content-Security-Policy: frame-ancestors https://app.usezend.app\\n' > site/_headers",
+    "site": "npm run build && rm -rf site && mkdir -p site/sdk && cp dist/index.js site/sdk/ && cp -r examples/coinflip site/coinflip && cp -r examples/.well-known site/.well-known && printf '/*\\n  X-Content-Type-Options: nosniff\\n  Content-Security-Policy: frame-ancestors https://app.usezend.app\\n/.well-known/*\\n  Access-Control-Allow-Origin: *\\n' > site/_headers",
     "deploy:pages": "npm run site && npx wrangler pages deploy site --project-name zapps-examples --branch main"
   },
   "license": "MIT",

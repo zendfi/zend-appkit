@@ -14,6 +14,8 @@ app.usezend.app) and use Zend sign-in, payments, money links, interactions, and 
 | [server-api.md](server-api.md) | REST endpoints for your backend and for app setup |
 | [webhooks.md](webhooks.md) | Events, payloads, signatures, retries |
 | [errors.md](errors.md) | Every error code and what to do |
+| [public-apps.md](public-apps.md) | Listing, review, ownership proof, `zend.attest` |
+| [prizes.md](prizes.md) | Host-funded prizes, resolving results, disputes |
 | [copy-guide.md](copy-guide.md) | Plain-language rules for anything users see |
 
 Quickstart: [../README.md](../README.md). Example app: [../examples/coinflip](../examples/coinflip).

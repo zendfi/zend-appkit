@@ -5,9 +5,14 @@
 - **Zend identity.** One account per person across Zend and every ZApp. Every app gets the
   user's `appUserId`, username, name and avatar. Email, wallet address and contacts need consent.
 - **ZApp.** Your web app, hosted on your own HTTPS origin and registered with a manifest.
-- **Sheet.** Zend opens your app in a bottom sheet (WebView on mobile, sandboxed iframe on web).
-  Zend draws a header above it with your app name and either your domain or
-  "Made by {you}. Not checked by Zend."
+- **Screen.** Zend opens your app full screen.
+  - Mobile: a WebView with no URL bar or browser chrome. Zend shows your icon and name while you
+    load, matches the status bar to your page's `body` background colour, turns off zoom and link
+    callouts, and adds one small floating pill (top right, collapses to a dot, draggable) for
+    Close and Report. Android back goes back within your pages first.
+  - Web: the address bar shows `app.usezend.app/apps/<slug>`, your app fills the window under a
+    slim Zend bar, and the browser's back button returns to Zend.
+  - Unreviewed apps show "Made by {you}. Not checked by Zend." on the loading screen and menu.
 - **Bridge.** `@zend/appkit` talks to Zend through the sheet. Calls are JSON messages; Zend checks
   that each one comes from your registered origins.
 - **Interaction.** A stateful object (a challenge, a round, a booking) with an ID. Cards and chat
@@ -63,3 +68,11 @@ Anyone with your app link (`app.usezend.app/apps/<slug>`) can open a private app
 - A resolved promise in the browser is not proof of payment. Use webhooks or the server API.
 - `appSession` tokens last 10 minutes. Exchange them on your server; don't use them as your own
   session.
+
+## Designing for the screen
+
+- Build for full screen, mobile first. Set a solid `body` background colour.
+- Keep the top-right 120×44 px clear of important controls (the Zend pill sits there until it folds).
+- Don't add your own "back to Zend" button; use `zend.close()` when you're done.
+- Links to other sites open outside Zend after the user confirms. Keep everything you need on your origins.
+- Users find you on Discover by name, so put your real app name in `name` and a one-line `description`.

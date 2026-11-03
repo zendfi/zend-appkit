@@ -1,9 +1,53 @@
 {
-  "app": "coinflip", "name": "Coin Flip", "version": "0.1.0",
-  "origins": ["https://zapps-examples.pages.dev"], "entry": "/coinflip/",
-  "permissions": ["post_card"], "cardTypes": ["result"],
-  "chatActions": [{ "id": "flip", "label": "Flip", "sheet": "/coinflip/", "interaction": "flip" }],
-  "interactionTypes": { "flip": {
-    "states": ["sent", "resolved", "expired"], "initial": "sent",
-    "transitions": { "sent": ["resolved", "expired"] }, "terminal": ["resolved", "expired"] } }
+  "app": "coinflip",
+  "name": "Coin Flip",
+  "version": "0.2.0",
+  "origins": [
+    "https://zapps-examples.pages.dev"
+  ],
+  "entry": "/coinflip/",
+  "permissions": [
+    "post_card"
+  ],
+  "cardTypes": [
+    "result"
+  ],
+  "chatActions": [
+    {
+      "id": "flip",
+      "label": "Flip",
+      "sheet": "/coinflip/",
+      "interaction": "flip"
+    }
+  ],
+  "interactionTypes": {
+    "flip": {
+      "states": [
+        "sent",
+        "resolved",
+        "expired"
+      ],
+      "initial": "sent",
+      "transitions": {
+        "sent": [
+          "resolved",
+          "expired"
+        ]
+      },
+      "terminal": [
+        "resolved",
+        "expired"
+      ]
+    }
+  },
+  "visibility": "public",
+  "custody": "contract",
+  "results": "app",
+  "developer": {
+    "name": "Zend",
+    "support": "support@usezend.app",
+    "privacy": "https://usezend.app/privacy"
+  },
+  "description": "Flip a coin with a friend in your chat. Winner gets bragging rights.",
+  "category": "games"
 }

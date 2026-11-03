@@ -160,7 +160,35 @@ export interface Zend {
       )[];
     };
   }): Promise<unknown>;
+  /** Tamper-evident record of a hash (e.g. a commitment). Returns a receipt signed by Zend. */
+  attest(p: { label: string; dataHash: string; interactionId?: string }): Promise<AttestReceipt>;
+  prize: {
+    /** Host puts up a prize. Amount in USD, at least 1. Zend shows the rules before the host confirms. */
+    create(p: { amount: number; joinInSecs: number; resolveInSecs: number; maxPlayers: number;
+      disputeSecs?: number; reference?: string; interactionId?: string }): Promise<Prize>;
+    /** Player joins (free). Only joined players can win. */
+    join(id: string): Promise<Prize>;
+    /** Host cancels during the wait after results; everything returns to the host. */
+    cancel(id: string): Promise<Prize>;
+    get(id: string): Promise<Prize>;
+  };
+  /** Let the user report something in your app to Zend. */
+  report(p: { reason: "scam" | "unfair_result" | "offensive" | "broken" | "other"; detail?: string;
+    interactionId?: string; prizeId?: string }): Promise<void>;
   close(result?: unknown): Promise<void>;
+}
+
+export interface AttestReceipt {
+  id: number; app: string; app_user_id: string; interaction_id: string; label: string;
+  data_hash: string; prev_hash: string; unix_ms: number; receipt_hash: string; signature: string;
+}
+
+export interface Prize {
+  id: string; app: string; host: string; pot_usd: number; max_players: number; player_count: number;
+  join_deadline: string; resolve_deadline: string; dispute_ends: string | null;
+  status: "open" | "resolved" | "paid" | "refunded";
+  winners: { address: string; app_user_id: string | null; amount_usd: number }[] | null;
+  joined: boolean; is_host: boolean; reference: string | null;
 }
 
 export interface InitOptions {
@@ -195,6 +223,14 @@ export function init(opts: InitOptions = {}): Zend {
       interaction_id: p.interactionId, template: p.template, placement: p.placement,
       idempotency_key: p.idempotencyKey, slots: p.slots,
     }),
+    attest: (p) => t.call("attest", p),
+    prize: {
+      create: (p) => t.call("prize.create", p),
+      join: (id) => t.call("prize.join", { id }),
+      cancel: (id) => t.call("prize.cancel", { id }),
+      get: (id) => t.call("prize.get", { id }),
+    },
+    report: (p) => t.call("report", p),
     close: (result) => t.call("close", { result }),
   };
 }
