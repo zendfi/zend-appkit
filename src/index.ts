@@ -199,6 +199,17 @@ export interface InitOptions {
   zendOrigins?: string[];
 }
 
+/** Zend's API uses snake_case for participants; the SDK promises camelCase. */
+function normalize(raw: any): Interaction {
+  const participants = (raw?.participants ?? []).map((p: any) => ({
+    appUserId: p.appUserId ?? p.app_user_id,
+    username: p.username ?? null,
+    name: p.name,
+    avatar: p.avatar ?? null,
+  }));
+  return { ...raw, participants };
+}
+
 export function init(opts: InitOptions = {}): Zend {
   const t = new Transport(opts.zendOrigins ?? DEFAULT_ZEND_ORIGINS);
   const q = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
@@ -210,14 +221,14 @@ export function init(opts: InitOptions = {}): Zend {
     request: (p) => t.call("request", p),
     createLink: (p) => t.call("createLink", p),
     interaction: {
-      create: (p) => t.call("interaction.create", {
+      create: (p) => t.call<any>("interaction.create", {
         type: p.type, participants: p.participants ?? [], data: p.data ?? {},
         visibility: p.visibility ?? "participants", expires_in_secs: p.expiresInSecs,
-      }),
-      get: (id) => t.call("interaction.get", { id }),
-      update: (id, p) => t.call("interaction.update", {
+      }).then(normalize),
+      get: (id) => t.call<any>("interaction.get", { id }).then(normalize),
+      update: (id, p) => t.call<any>("interaction.update", {
         id, state: p.state, data: p.data, idempotency_key: p.idempotencyKey, expected_version: p.expectedVersion,
-      }),
+      }).then(normalize),
     },
     postCard: (p) => t.call("card.post", {
       interaction_id: p.interactionId, template: p.template, placement: p.placement,
