@@ -6,13 +6,78 @@
      transitions { sent: [resolved, expired] }, terminal [resolved, expired].
      Demo only: the page picks the winner. A real game decides results on its server. -->
 <html>
-<head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flip</title></head>
-<body style="font-family:system-ui;text-align:center;padding:40px">
-  <h1>🪙 Flip</h1>
-  <button id="flip" style="font-size:20px;padding:12px 28px" disabled>Flip</button>
-  <p id="out"></p>
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- Both schemes supported: the browser themes form controls and
+       scrollbars to match, and there is no white flash in dark mode. -->
+  <meta name="color-scheme" content="light dark">
+  <title>Flip</title>
+  <style>
+    /* Zend palette. Light first, dark from the OS setting (the Zend app
+       follows the same setting). A host that sets data-theme wins. */
+    :root {
+      color-scheme: light dark;
+      --bg: #FAFAF8; --surface: #FFFFFF; --text: #1A1A1A; --muted: #6B6B66;
+      --border: #ECECE8; --accent: #16A34A; --on-accent: #FFFFFF;
+      --danger: #C94F2A;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0E0F10; --surface: #17181A; --text: #F2F3F4; --muted: #A1A1AA;
+        --border: #26282C; --accent: #1FD16A; --on-accent: #08130C;
+        --danger: #FF5A5F;
+      }
+    }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #FAFAF8; --surface: #FFFFFF; --text: #1A1A1A; --muted: #6B6B66;
+      --border: #ECECE8; --accent: #16A34A; --on-accent: #FFFFFF; --danger: #C94F2A;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0E0F10; --surface: #17181A; --text: #F2F3F4; --muted: #A1A1AA;
+      --border: #26282C; --accent: #1FD16A; --on-accent: #08130C; --danger: #FF5A5F;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      display: grid; place-items: center; min-height: 100vh; padding: 32px 20px;
+      text-align: center;
+    }
+    .card {
+      width: 100%; max-width: 360px; padding: 32px 24px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    }
+    .coin { font-size: 64px; line-height: 1; margin: 0 0 8px; }
+    h1 { font-size: 22px; font-weight: 700; margin: 0 0 24px; }
+    button {
+      appearance: none; border: 0; cursor: pointer; width: 100%;
+      font: 600 17px/1 inherit; padding: 16px 24px; border-radius: 999px;
+      background: var(--accent); color: var(--on-accent);
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    button:hover:not(:disabled) { opacity: .92; }
+    button:active:not(:disabled) { transform: scale(.97); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    button:disabled { cursor: default; background: var(--border); color: var(--muted); }
+    #out { min-height: 1.4em; margin: 16px 0 0; color: var(--muted); font-size: 15px; }
+    #out.win { color: var(--text); font-weight: 700; font-size: 18px; }
+    #out.err { color: var(--danger); }
+    @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <p class="coin" aria-hidden="true">🪙</p>
+    <h1>Flip</h1>
+    <button id="flip" disabled>Flip</button>
+    <p id="out" role="status" aria-live="polite"></p>
+  </main>
   <script type="module">
     import { init } from "../sdk/index.js";
+    const t = new URLSearchParams(location.search).get("theme");
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
     const zend = init();
     const out = document.getElementById("out");
     const btn = document.getElementById("flip");
@@ -27,25 +92,41 @@
         id = (await zend.interaction.create({ type: "flip", participants: others })).id;
       } catch (e) { out.textContent = "Couldn't start a new flip."; }
     }
-    if (me && id) btn.disabled = false;
-    else if (me && !out.textContent) out.textContent = "Open me from a chat: + → Apps → Flip.";
+    if (me && id) {
+      btn.disabled = false;
+    } else if (me && !out.textContent) {
+      // Opened from the app list, not a chat: there is no one to flip with.
+      btn.textContent = "Open from a chat";
+      out.textContent = "Flips happen between two people. In a chat, tap + → Apps → Flip.";
+    }
 
+    // A bridge call that never answers (host closed, network) shouldn't leave
+    // the button stuck with no feedback.
+    const timed = (p, ms = 12000) => Promise.race([p,
+      new Promise((_, r) => setTimeout(() => r({ code: "TIMEOUT" }), ms))]);
     btn.onclick = async () => {
       btn.disabled = true;
+      btn.textContent = "Flipping…";
+      out.className = "";
+      out.textContent = "";
       try {
-        const i = await zend.interaction.get(id);
+        const i = await timed(zend.interaction.get(id));
         const other = i.participants.find((p) => p.appUserId !== me.appUserId);
         const winner = Math.random() < 0.5 ? me.name : (other?.name ?? "them");
-        await zend.interaction.update(id, { state: "resolved", data: { winner }, idempotencyKey: `${id}:end` });
+        await timed(zend.interaction.update(id, { state: "resolved", data: { winner }, idempotencyKey: `${id}:end` }));
         await zend.postCard({
           interactionId: id, template: "result", placement: "chat", idempotencyKey: `${id}:card`,
           slots: { title: `${winner} won the coin flip`, emoji: "🪙",
                    buttons: [{ label: "Flip again", action: "start_interaction", type: "flip" }] },
         }).catch(() => {});
+        out.className = "win";
+        btn.textContent = "Done";
         out.textContent = `${winner} wins!`;
         setTimeout(() => zend.close({ winner }), 1500);
       } catch (e) {
+        out.className = "err";
         out.textContent = e.code === "INTERACTION_FINISHED" ? "This flip is done. Tap Flip again on the card." : "That didn't go through. Try again.";
+        btn.textContent = "Flip";
         btn.disabled = false;
       }
     };
