@@ -94,10 +94,20 @@ class Transport {
     });
   }
 
+  /** Events Zend pushes without a request (live rooms). */
+  private listeners = new Set<(event: any) => void>();
+  onEvent(fn: (event: any) => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
   private receive(raw: string) {
     let msg: any;
     try { msg = JSON.parse(raw); } catch { return; }
     if (msg?.zend !== 1) return;
+    if (typeof msg.event === "string") {
+      for (const fn of this.listeners) fn(msg);
+      return;
+    }
     const p = this.pending.get(msg.id);
     if (!p) return;
     this.pending.delete(msg.id);
@@ -121,8 +131,20 @@ export interface Zend {
   /** Why Zend opened this page. Read once on load. */
   launch: Launch;
   identity: { get(): Promise<Identity> };
-  /** Send to a Zend user. Amount in USD for now. */
-  pay(p: { to: `@${string}`; amount: number; note?: string; reference?: string }): Promise<{ paymentId: string; status: string }>;
+  /**
+   * Send to a Zend user. Give `price: { ngn }` to price in Naira (Zend converts at the current
+   * rate and shows ₦ on its sheet), or `amount` in USD. `payment.completed` reaches your webhook
+   * even if the user closes your app right after paying.
+   */
+  pay(p: {
+    to: `@${string}`; note?: string; reference?: string;
+    /**
+     * Pay others from the same payment, in one go: e.g. `[{ to: "app", percent: 10 }]` sends 10% to
+     * your app's payout account (set with `zend apps payout`). Up to 3. Each part at least $0.01;
+     * `to` gets the rest. Zend shows every part before the user confirms.
+     */
+    splits?: { to: "app" | `@${string}`; percent?: number; amount?: number }[];
+  } & ({ amount: number } | { price: { ngn: number } })): Promise<{ paymentId: string; status: string }>;
   /** Make an ask link others can pay. Omit amount to let payers choose. */
   request(p: { amount?: number; note?: string; maxPayments?: number; reference?: string }): Promise<{ id: string; url: string }>;
   /** Make a money link. Zend shares it; you only get its id. */
@@ -174,12 +196,33 @@ export interface Zend {
     cancel(id: string): Promise<Prize>;
     get(id: string): Promise<Prize>;
   };
+  /**
+   * A realtime room for the people in an interaction. Zend checks membership and stamps every
+   * message with the sender's `appUserId`; nothing is stored. Messages up to 8 KB, 20 a second.
+   */
+  live: { join(interactionId: string): Promise<LiveRoom> };
+  /**
+   * Opens Zend's own friend picker. You get back only the people chosen (never the friend list),
+   * each with a `pick` token: pass it as a participant to `interaction.create`, which works even
+   * for people who haven't used your app yet. Empty if the user backs out.
+   */
+  people: { pick(p?: { max?: number; title?: string }): Promise<PickedPerson[]> };
   /** Let the user report something in your app to Zend. */
   report(p: { reason: "scam" | "unfair_result" | "offensive" | "broken" | "other"; detail?: string;
     interactionId?: string; prizeId?: string }): Promise<void>;
   close(result?: unknown): Promise<void>;
 }
 
+export interface PickedPerson { appUserId: string; name: string; username: string | null; avatar: string | null; pick: string }
+export interface LiveMember { appUserId: string; name: string; username: string | null; avatar: string | null }
+export interface LiveRoom {
+  send(data: unknown): Promise<void>;
+  on(event: "message", fn: (m: { from: string; data: unknown; at: string }) => void): () => void;
+  on(event: "presence", fn: (members: LiveMember[]) => void): () => void;
+  on(event: "closed", fn: (reason: string) => void): () => void;
+  on(event: "status", fn: (status: "connected" | "reconnecting" | "disconnected") => void): () => void;
+  leave(): Promise<void>;
+}
 export interface AttestReceipt {
   id: number; app: string; app_user_id: string; interaction_id: string; label: string;
   data_hash: string; prev_hash: string; unix_ms: number; receipt_hash: string; signature: string;
@@ -247,6 +290,38 @@ export function init(opts: InitOptions = {}): Zend {
       get: (id) => t.call("prize.get", { id }),
     },
     report: (p) => t.call("report", p),
+    people: { pick: (p = {}) => t.call("people.pick", p) },
+    live: {
+      async join(interactionId) {
+        const handlers: Record<string, Set<(x: any) => void>> = {
+          message: new Set(), presence: new Set(), closed: new Set(), status: new Set(),
+        };
+        const off = t.onEvent((e) => {
+          if (e.event !== "live" || e.interactionId !== interactionId) return;
+          const value = e.type === "message" ? { from: e.from, data: e.data, at: e.at }
+            : e.type === "presence" ? e.members : e.type === "closed" ? e.reason : e.status;
+          for (const fn of handlers[e.type] ?? []) fn(value);
+          if (e.type === "closed") off();
+        });
+        try {
+          await t.call("live.join", { interactionId });
+        } catch (err) {
+          off();
+          throw err;
+        }
+        return {
+          send: (data) => t.call("live.send", { interactionId, data }),
+          on: (event: string, fn: (x: any) => void) => {
+            handlers[event]?.add(fn);
+            return () => handlers[event]?.delete(fn);
+          },
+          leave: async () => {
+            off();
+            await t.call("live.leave", { interactionId });
+          },
+        } as LiveRoom;
+      },
+    },
     close: (result) => t.call("close", { result }),
   };
 }

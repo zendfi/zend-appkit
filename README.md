@@ -55,6 +55,7 @@ Rules Zend enforces:
 - Labels and card text must be plain language. Words like *crypto, token, wallet, USDC, gas, escrow* are rejected: your users shouldn't need to know how money moves.
 - Public apps need `custody: "contract"` and go through review. Private apps aren't reviewed and always show **"Made by {you}. Not checked by Zend."**
 - Permissions: `post_card`, `update_bubble`, `pay`, `request_payment`, `create_link`, `email`, `wallet_address`, `contacts`. Users approve `email`, `wallet_address` and `contacts` individually.
+- A transition can be reserved for your server: write `{ "to": "resolved", "serverOnly": true }` instead of `"resolved"`. Zend then refuses that move from a page (error `TRANSITION_SERVER_ONLY`) and accepts it only through the server API with your app key. Use it for anything a player could fake by editing the page, such as declaring a winner.
 
 ## 3. In your page
 
@@ -72,8 +73,25 @@ if (zend.launch.interaction) {
 
 // Money: each call opens Zend's own confirm sheet.
 await zend.pay({ to: "@danny", amount: 1, note: "Lost the rematch", reference: "game_42" });
+await zend.pay({ to: "@ada", price: { ngn: 2000 }, reference: "article_7" }); // priced in Naira
+// Your server hears `payment.completed` (with price_ngn and the rate) even if the user closes the
+// app right after paying. Look payments up by reference: GET /api/zend/v2/apps/server/payments?reference=article_7
 const ask = await zend.request({ amount: 2, note: "Tournament entry", maxPayments: 8 });
 await zend.createLink({ amount: 5, uses: 3, note: "Prize", reference: "t_9" }); // Zend shares it
+
+// Split one payment: Ada gets ₦1,800 and your app ₦200, in one go. Set your app's account first:
+// zend apps payout <slug> <username>
+await zend.pay({ to: "@ada", price: { ngn: 2000 }, splits: [{ to: "app", percent: 10 }], reference: "article_7" });
+
+// Let the user pick friends with Zend's own picker. You only see who they chose.
+const [friend] = await zend.people.pick({ title: "Who do you want to play?" });
+const game = await zend.interaction.create({ type: "challenge", participants: [friend.pick] });
+
+// A live room for everyone in the interaction: no realtime server of your own.
+const room = await zend.live.join(game.id);
+room.on("presence", (members) => showWhoIsHere(members));
+room.on("message", ({ from, data }) => applyMove(from, data)); // `from` is set by Zend
+await room.send({ move: "A3" }); // up to 8 KB, 20 a second
 
 // Move the interaction along (only along your manifest's transitions).
 await zend.interaction.update(id, { state: "resolved", data: { winner: "tunde" }, idempotencyKey: "game_42_end" });
