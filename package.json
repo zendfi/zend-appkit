@@ -1,6 +1,6 @@
 {
   "name": "@zendfi/appkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Build ZApps: Sign in with Zend, payments, money links and interactions.",
   "type": "module",
   "main": "dist/index.js",

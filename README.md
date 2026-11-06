@@ -83,6 +83,11 @@ await zend.createLink({ amount: 5, uses: 3, note: "Prize", reference: "t_9" }); 
 // zend apps payout <slug> <username>
 await zend.pay({ to: "@ada", price: { ngn: 2000 }, splits: [{ to: "app", percent: 10 }], reference: "article_7" });
 
+// `price: { ngn }` works on every money call. An ask link priced in Naira asks for that many
+// Naira whenever someone pays it; links and prizes are converted when they're made.
+await zend.request({ price: { ngn: 1500 }, note: "Your share of lunch" });
+await zend.createLink({ price: { ngn: 500 }, uses: 10 });
+
 // Let the user pick friends with Zend's own picker. You only see who they chose.
 const [friend] = await zend.people.pick({ title: "Who do you want to play?" });
 const game = await zend.interaction.create({ type: "challenge", participants: [friend.pick] });
