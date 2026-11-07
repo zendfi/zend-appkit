@@ -140,6 +140,23 @@ Every app has a tier (`private`, `public`, `growth`) capping cards per user per 
 daily spend per user, links per day, and link size. Calls over a limit fail with codes like
 `APP_LIMIT_AMOUNT` / `APP_LIMIT_DAILY` / `CARD_LIMIT`. Ask Zend for a higher tier.
 
+## Spend allowance
+
+```js
+// Once: Zend asks the user (they can lower the limits or say not now).
+await zend.allowance.request({ perPayment: { ngn: 500 }, perDay: { ngn: 2000 } });
+// Then a tip to your opponent goes through without the confirm sheet.
+await zend.pay({ to: "@ada", price: { ngn: 200 }, interactionId: id, reference: "tip_42" });
+```
+
+`pay` skips the sheet only when the amount fits both limits **and** `to` is another person in
+`interactionId` or your app's payout account. Anything else shows the sheet as usual, so an
+allowance can't be used to pay arbitrary people. Limits never exceed your tier's. The user sees a
+note for each payment and a summary each evening, can change or turn it off in Settings →
+Connected apps, and is asked again after 7 days without use. It ends after 90 days, or when your
+app is disconnected or suspended. `zend.allowance.get()` returns the current limits and what's been
+spent today. Money still only moves when the user's phone signs.
+
 ## Provable draws
 
 ```js

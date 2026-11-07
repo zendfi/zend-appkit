@@ -139,6 +139,11 @@ export interface Zend {
   pay(p: {
     to: `@${string}`; note?: string; reference?: string;
     /**
+     * The interaction this payment is part of. With an allowance (`zend.allowance`), payments to
+     * other people in it go through without Zend's confirm sheet.
+     */
+    interactionId?: string;
+    /**
      * Pay others from the same payment, in one go: e.g. `[{ to: "app", percent: 10 }]` sends 10% to
      * your app's payout account (set with `zend apps payout`). Up to 3. Each part at least $0.01;
      * `to` gets the rest. Zend shows every part before the user confirms.
@@ -202,6 +207,18 @@ export interface Zend {
    * - `shuffle`: an order of `0..n-1` (`2 <= n <= 64`).
    * - `pick`: `k` different numbers from `0..n-1` (`1 <= k <= 64`, `k <= n <= 1000`).
    */
+  /**
+   * Spend allowance: the user lets your app pay small amounts without Zend's confirm sheet. Zend
+   * shows its own consent sheet; the user can lower either limit or say not now (`USER_CANCELLED`).
+   * Under it, `pay` skips the sheet only when the amount fits both limits and `to` is another
+   * person in `interactionId` or your app's payout account; anything else asks as usual. Zend
+   * still shows a small note for every payment, sends the user a summary each evening, and asks
+   * again after 7 days without use. Ends after 90 days or when the user turns it off.
+   */
+  allowance: {
+    request(p?: { perPayment?: { ngn: number }; perDay?: { ngn: number } }): Promise<Allowance | null>;
+    get(): Promise<Allowance | null>;
+  };
   random(p: { interactionId: string; label: string } & (
     | { kind: "int"; n: number }
     | { kind: "shuffle"; n: number }
@@ -252,6 +269,10 @@ export interface RandomResult {
   interactionId: string; label: string; kind: "int" | "shuffle" | "pick"; n: number; k: number;
   value: number[]; transactionId: string; attestation: AttestReceipt | null;
   verify: { package: string; registry: string };
+}
+export interface Allowance {
+  per_payment_ngn: number | null; per_day_ngn: number | null; per_payment_usd: number; per_day_usd: number;
+  spent_today_ngn: number | null; spent_today_usd: number; expires_at: string;
 }
 export interface AttestReceipt {
   id: number; app: string; app_user_id: string; interaction_id: string; label: string;
@@ -314,6 +335,10 @@ export function init(opts: InitOptions = {}): Zend {
     }),
     attest: (p) => t.call("attest", p),
     random: (p) => t.call("random", p),
+    allowance: {
+      request: (p = {}) => t.call("allowance.request", p),
+      get: () => t.call("allowance.get", {}),
+    },
     prize: {
       create: (p) => t.call("prize.create", p),
       join: (id) => t.call("prize.join", { id }),
