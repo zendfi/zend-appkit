@@ -145,3 +145,9 @@ daily spend per user, links per day, and link size. Calls over a limit fail with
 Every call rejects with `ZendError { code, message }`. Common codes: `USER_CANCELLED`,
 `PERMISSION_DENIED`, `NOT_CONNECTED`, `INVALID_TRANSITION`, `VERSION_CONFLICT`, `BUSY`,
 `APP_SUSPENDED`. Show your own copy; `message` is for logs.
+
+`APP_GAS_BUDGET`: Zend pays the network cost of your app's links and prizes up to your tier's
+monthly budget (private 2 SUI, public 50, growth 500, about 440 / 11,000 / 110,000 collected
+links). Past it, new links, prizes and joins are refused until the 1st (UTC); collecting, taking
+back, results and payouts always go through. Track it with `zend apps info <slug>`. Plain sends
+and `pay` cost nothing and aren't counted.
