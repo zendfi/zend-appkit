@@ -140,6 +140,25 @@ Every app has a tier (`private`, `public`, `growth`) capping cards per user per 
 daily spend per user, links per day, and link size. Calls over a limit fail with codes like
 `APP_LIMIT_AMOUNT` / `APP_LIMIT_DAILY` / `CARD_LIMIT`. Ask Zend for a higher tier.
 
+## Provable draws
+
+```js
+// Both players' pages can call this; the second gets the same result.
+const { value: [side], transactionId } = await zend.random({ interactionId: id, label: "flip", kind: "int", n: 2 });
+const deal = await zend.random({ interactionId: id, label: "deal-1", kind: "shuffle", n: 52 });
+const winners = await zend.random({ interactionId: id, label: "winners", kind: "pick", n: 300, k: 3 });
+```
+
+The value comes from Sui's built-in randomness, drawn in Zend's `zend::draws` contract. Each
+`(interaction, label)` is drawn once, ever: you can't redraw `"flip"` until you like the answer, and
+asking with other settings for a used label fails with `DRAW_MISMATCH`. Labels are 1-25 of a-z, 0-9,
+`_`, `-`; up to 50 draws per interaction. Your server can draw too: `POST /api/zend/v2/apps/server/random`
+with your app key and `{ interaction_id, label, kind, n, k? }`, and gets a `random.drawn` webhook for
+every draw.
+
+To check a result yourself, look up `transactionId` on Sui (a `Drawn` event from package
+`verify.package`), or check `attestation` against Zend's public attestation key.
+
 ## Errors
 
 Every call rejects with `ZendError { code, message }`. Common codes: `USER_CANCELLED`,

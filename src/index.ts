@@ -189,6 +189,22 @@ export interface Zend {
   }): Promise<unknown>;
   /** Tamper-evident record of a hash (e.g. a commitment). Returns a receipt signed by Zend. */
   attest(p: { label: string; dataHash: string; interactionId?: string }): Promise<AttestReceipt>;
+  /**
+   * A draw nobody can rig, not you and not Zend. Zend draws it on Sui and records it once per
+   * interaction and label, so asking again (say, from the other player's page) returns the same
+   * result. Everyone in the interaction's live room also gets it as a message from `"zend"` with
+   * `data: { type: "random", result }`. Costs nothing to the user; counts against your app's
+   * network budget (about 0.003 SUI a draw).
+   *
+   * - `int`: one number in `0..n-1` (`n >= 2`). A coin flip is `n: 2`.
+   * - `shuffle`: an order of `0..n-1` (`2 <= n <= 64`).
+   * - `pick`: `k` different numbers from `0..n-1` (`1 <= k <= 64`, `k <= n <= 1000`).
+   */
+  random(p: { interactionId: string; label: string } & (
+    | { kind: "int"; n: number }
+    | { kind: "shuffle"; n: number }
+    | { kind: "pick"; n: number; k: number }
+  )): Promise<RandomResult>;
   prize: {
     /**
      * Host puts up a prize: `amount` in USD (at least 1) or `price: { ngn }`. Zend shows the
@@ -228,6 +244,12 @@ export interface LiveRoom {
   on(event: "closed", fn: (reason: string) => void): () => void;
   on(event: "status", fn: (status: "connected" | "reconnecting" | "disconnected") => void): () => void;
   leave(): Promise<void>;
+}
+/** A recorded draw. Check it on Sui with `transactionId`, or in Zend's record chain with `attestation`. */
+export interface RandomResult {
+  interactionId: string; label: string; kind: "int" | "shuffle" | "pick"; n: number; k: number;
+  value: number[]; transactionId: string; attestation: AttestReceipt | null;
+  verify: { package: string; registry: string };
 }
 export interface AttestReceipt {
   id: number; app: string; app_user_id: string; interaction_id: string; label: string;
@@ -289,6 +311,7 @@ export function init(opts: InitOptions = {}): Zend {
       idempotency_key: p.idempotencyKey, slots: p.slots,
     }),
     attest: (p) => t.call("attest", p),
+    random: (p) => t.call("random", p),
     prize: {
       create: (p) => t.call("prize.create", p),
       join: (id) => t.call("prize.join", { id }),

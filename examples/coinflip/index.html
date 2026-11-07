@@ -111,9 +111,22 @@
       out.textContent = "";
       try {
         const i = await timed(zend.interaction.get(id));
-        const other = i.participants.find((p) => p.appUserId !== me.appUserId);
-        const winner = Math.random() < 0.5 ? me.name : (other?.name ?? "them");
-        await timed(zend.interaction.update(id, { state: "resolved", data: { winner }, idempotencyKey: `${id}:end` }));
+        // Same order on both phones, so a draw of 0 or 1 names the same person for everyone.
+        const people = [...i.participants].sort((a, b) => a.appUserId.localeCompare(b.appUserId));
+        const nameOf = (p) => (p ? (p.appUserId === me.appUserId ? me.name : p.name) : "them");
+        let side, draw = null;
+        try {
+          // Drawn by Zend, recorded once for this flip: nobody can flip again until they like it.
+          const r = await timed(zend.random({ interactionId: id, label: "flip", kind: "int", n: 2 }), 40000);
+          side = r.value[0];
+          draw = { label: r.label, transactionId: r.transactionId };
+        } catch (e) {
+          // Older Zend apps can't draw yet: flip here instead, as before.
+          if (e.code !== "UNKNOWN_METHOD") throw e;
+          side = Math.random() < 0.5 ? 0 : 1;
+        }
+        const winner = people.length > 1 ? nameOf(people[side]) : (side === 0 ? me.name : "them");
+        await timed(zend.interaction.update(id, { state: "resolved", data: { winner, draw }, idempotencyKey: `${id}:end` }));
         await zend.postCard({
           interactionId: id, template: "result", placement: "chat", idempotencyKey: `${id}:card`,
           slots: { title: `${winner} won the coin flip`, emoji: "🪙",
