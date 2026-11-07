@@ -156,7 +156,10 @@ asking with other settings for a used label fails with `DRAW_MISMATCH`. Labels a
 with your app key and `{ interaction_id, label, kind, n, k? }`, and gets a `random.drawn` webhook for
 every draw.
 
-To check a result yourself, look up `transactionId` on Sui (a `Drawn` event from package
+Put `check: true` on the result card's slots and Zend shows **Result checked ✓** under it, but only
+when its own check passes: every record for the interaction is intact and signed by Zend, and each
+draw matches its record. Interactions without a draw get no badge. Tapping it explains what was
+checked. To check a result yourself, look up `transactionId` on Sui (a `Drawn` event from package
 `verify.package`), or check `attestation` against Zend's public attestation key.
 
 ## Errors

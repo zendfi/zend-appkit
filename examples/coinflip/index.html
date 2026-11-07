@@ -129,7 +129,8 @@
         await timed(zend.interaction.update(id, { state: "resolved", data: { winner, draw }, idempotencyKey: `${id}:end` }));
         await zend.postCard({
           interactionId: id, template: "result", placement: "chat", idempotencyKey: `${id}:card`,
-          slots: { title: `${winner} won the coin flip`, emoji: "🪙",
+          // Zend adds "Result checked ✓" when the flip came from a recorded draw.
+          slots: { title: `${winner} won the coin flip`, emoji: "🪙", check: Boolean(draw),
                    buttons: [{ label: "Flip again", action: "start_interaction", type: "flip" }] },
         }).catch(() => {});
         out.className = "win";

@@ -180,6 +180,8 @@ export interface Zend {
       subtitle?: string;
       emoji?: string;
       media?: string;
+      /** Result cards: ask Zend to check the interaction's draws and show "Result checked ✓". */
+      check?: boolean;
       buttons?: (
         | { label: string; action: "open_sheet"; path: string }
         | { label: string; action: "start_interaction"; type: string }
