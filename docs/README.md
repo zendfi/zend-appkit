@@ -16,6 +16,7 @@ app.usezend.app) and use Zend sign-in, payments, money links, interactions, and 
 | [errors.md](errors.md) | Every error code and what to do |
 | [public-apps.md](public-apps.md) | Listing, review, ownership proof, `zend.attest` |
 | [prizes.md](prizes.md) | Host-funded prizes, resolving results, disputes |
+| [unlock.md](unlock.md) | Pay-to-read: listings, encrypting content, buying, gifts, reading |
 | [copy-guide.md](copy-guide.md) | Plain-language rules for anything users see |
 
 Quickstart: [../README.md](../README.md). Example app: [../examples/coinflip](../examples/coinflip).

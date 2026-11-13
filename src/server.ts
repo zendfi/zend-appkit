@@ -48,6 +48,32 @@ export class ZendServer {
     });
   }
 
+  /**
+   * Puts an item on sale (pay-to-read). `to` (`"app"` = your payout account, or `"@username"`)
+   * gets what `splits` leave. Returns the listing; encrypt the item's content for
+   * `listing_id` (see `unlockIdentity`). A `202 pending` answer means send it again shortly.
+   */
+  createListing(p: { item: string; title?: string; to: string; splits?: { to: string; percent?: number; amount_usd?: number }[] }
+    & ({ amount_usd: number } | { price: { ngn: number } })) {
+    return this.req<UnlockListing>("POST", "/apps/server/unlock/listings", p);
+  }
+
+  getListing(item: string) {
+    return this.req<UnlockListing>("GET", `/apps/server/unlock/listings/${encodeURIComponent(item)}`);
+  }
+
+  /** Pause (`active: false`), resume, retitle, or reprice (give `to`, the price and `splits` together). */
+  updateListing(item: string, p: { active?: boolean; title?: string; to?: string; amount_usd?: number;
+    price?: { ngn: number }; splits?: { to: string; percent?: number; amount_usd?: number }[] }) {
+    return this.req<UnlockListing>("PATCH", `/apps/server/unlock/listings/${encodeURIComponent(item)}`, p);
+  }
+
+  /** Whether `appUserId` holds a receipt for `item` right now (checked on Sui). */
+  hasAccess(item: string, appUserId: string) {
+    const q = new URLSearchParams({ item, user: appUserId });
+    return this.req<{ item: string; unlocked: boolean }>("GET", `/apps/server/unlock/access?${q}`);
+  }
+
   getInteraction(id: string) {
     return this.req("GET", `/apps/server/interactions/${id}`);
   }
@@ -56,6 +82,30 @@ export class ZendServer {
   updateInteraction(id: string, p: { state: string; data?: object; idempotency_key: string; expected_version?: number }) {
     return this.req("PATCH", `/apps/server/interactions/${id}`, p);
   }
+}
+
+export interface UnlockListing {
+  item: string; title: string | null; listing_id: string;
+  price_usd: number; price_ngn: number | null;
+  parts: { to: string | null; label: string; amount_usd: number }[];
+  active: boolean; sold: number;
+  verify: { package: string; listing: string };
+}
+
+/** Seal settings for encrypting pay-to-read content on mainnet. */
+export const UNLOCK_SEAL = {
+  packageId: "0x7c07a8df79e3f5b92c3b7352c06bce2b28ba1381d5724af6c3db8d19cef8063d",
+  /** Seal's decentralised mainnet committee (5 of 8). Use threshold 1 with it. */
+  committee: "0x686098f1439237fff9f36b99c7329683c22979d2005c2465cb891acb012a7595",
+  aggregatorUrl: "https://seal-aggregator-mainnet.mystenlabs.com",
+} as const;
+
+/**
+ * The Seal identity (hex, no `0x`) to encrypt one piece of a listing under: the listing id, then
+ * an optional suffix so one listing can hold several pieces ("chapter-2").
+ */
+export function unlockIdentity(listingId: string, suffix = ""): string {
+  return listingId.replace(/^0x/, "").padStart(64, "0").toLowerCase() + Buffer.from(suffix, "utf8").toString("hex");
 }
 
 function uleb(n: number): number[] {

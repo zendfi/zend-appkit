@@ -1,8 +1,20 @@
-# @zend/appkit
+# @zendfi/appkit
 
-Build ZApps: web apps that open inside Zend and use Zend sign-in, payments, money links,
-interactions, and chat/feed cards. Zend draws every money screen and every card, so your app
-never handles keys, balances, or payment UI.
+Build on Zend, the money network for the internet.
+
+AppKit turns your web app into a **ZApp**: it opens inside Zend (the mobile app and
+app.usezend.app) and gets the network for free:
+
+- **People.** Sign in with Zend. Every person has an @name and one ID that's the same in every app.
+- **Money.** Pay, ask links, money links, splits and prizes, priced in Naira. Zend draws every
+  money screen, so your app never handles keys, balances or payment UI.
+- **Reach.** A button in every chat's Apps tray, and cards in chats and the Activity feed.
+
+```bash
+npm install @zendfi/appkit
+```
+
+Docs: https://docs.usezend.app
 
 ## 1. Register your app
 
@@ -60,7 +72,7 @@ Rules Zend enforces:
 ## 3. In your page
 
 ```ts
-import { init } from "@zend/appkit";
+import { init } from "@zendfi/appkit";
 const zend = init();
 
 const me = await zend.identity.get();           // { appUserId, username, name, appSession }
@@ -116,7 +128,7 @@ await zend.close({ done: true });
 ## 4. On your server
 
 ```ts
-import { ZendServer, verifyWebhook } from "@zend/appkit/server";
+import { ZendServer, verifyWebhook } from "@zendfi/appkit/server";
 const zend = new ZendServer(process.env.ZEND_APP_KEY!);
 
 const user = await zend.verifySession(appSession);       // trusted identity

@@ -238,6 +238,28 @@ export interface Zend {
     get(id: string): Promise<Prize>;
   };
   /**
+   * Pay-to-read. Your server puts an item on sale (`ZendServer.createListing`) and encrypts its
+   * content for that listing; people buy it here and Zend opens it on their device. Nobody
+   * without a receipt can open it, including your server and Zend. Needs the `unlock` permission.
+   */
+  unlock: {
+    /** Price, and whether this person has unlocked it. */
+    get(item: string): Promise<UnlockItem>;
+    /**
+     * Zend shows the price and every payee, the person confirms, and one payment pays everyone
+     * and gives the receipt. `for`: a `pick` token from `people.pick` (or `@username`) to buy it
+     * for a friend instead. `ALREADY_UNLOCKED` if they have it.
+     */
+    buy(p: { item: string; for?: string }): Promise<UnlockPurchase>;
+    /** Gives this person's copy to a friend (`pick` token or `@username`). They lose access. */
+    gift(p: { item: string; to: string }): Promise<{ item: string; status: "gifted" }>;
+    /**
+     * Opens encrypted bytes you fetched (from Walrus or your storage) for `item`. Returns the
+     * plaintext, and `text` when it's UTF-8. `NO_ACCESS` if they haven't unlocked it. Up to 10 MB.
+     */
+    read(p: { item: string; data: Uint8Array | ArrayBuffer }): Promise<{ data: Uint8Array; text: string | null }>;
+  };
+  /**
    * A realtime room for the people in an interaction. Zend checks membership and stamps every
    * message with the sender's `appUserId`; nothing is stored. Messages up to 8 KB, 20 a second.
    */
@@ -270,6 +292,11 @@ export interface RandomResult {
   value: number[]; transactionId: string; attestation: AttestReceipt | null;
   verify: { package: string; registry: string };
 }
+export interface UnlockItem {
+  item: string; title: string | null; unlocked: boolean; forSale: boolean;
+  price: { usd: number; ngn: number | null };
+}
+export interface UnlockPurchase { item: string; paymentId: string; receiptId: string | null; status: "unlocked" }
 export interface Allowance {
   per_payment_ngn: number | null; per_day_ngn: number | null; per_payment_usd: number; per_day_usd: number;
   spent_today_ngn: number | null; spent_today_usd: number; expires_at: string;
@@ -293,6 +320,18 @@ export interface InitOptions {
    * Add a staging origin while testing, e.g. ["https://app.usezend.app", "https://staging.usezend.app"].
    */
   zendOrigins?: string[];
+}
+
+function toBase64(b: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function fromBase64(s: string): Uint8Array {
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 /** Zend's API uses snake_case for participants; the SDK promises camelCase. */
@@ -344,6 +383,16 @@ export function init(opts: InitOptions = {}): Zend {
       join: (id) => t.call("prize.join", { id }),
       cancel: (id) => t.call("prize.cancel", { id }),
       get: (id) => t.call("prize.get", { id }),
+    },
+    unlock: {
+      get: (item) => t.call("unlock.get", { item }),
+      buy: (p) => t.call("unlock.buy", p),
+      gift: (p) => t.call("unlock.gift", p),
+      async read(p) {
+        const bytes = p.data instanceof Uint8Array ? p.data : new Uint8Array(p.data);
+        const r = await t.call<{ data: string; text: string | null }>("unlock.read", { item: p.item, data: toBase64(bytes) });
+        return { data: fromBase64(r.data), text: r.text };
+      },
     },
     report: (p) => t.call("report", p),
     people: { pick: (p = {}) => t.call("people.pick", p) },

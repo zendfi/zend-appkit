@@ -42,6 +42,7 @@ Unknown top-level fields are rejected.
 | `contacts` | reserved | "See people you choose to share" toggle |
 | `attest` | `attest` | none |
 | `prize` | `prize.*` | per prize |
+| `unlock` | `unlock.*`, server `/apps/server/unlock/*` | per purchase |
 
 Consent toggles start off. Users can change them in Settings → Connected apps.
 
