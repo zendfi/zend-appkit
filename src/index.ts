@@ -16,6 +16,8 @@ export interface Identity {
   appUserId: string;
   username: string | null;
   name: string;
+  /** Profile photo URL, or null. Older Zend apps leave it out. */
+  avatar?: string | null;
   scopes: string[];
   /** Short-lived token. Send it to your server and exchange it at /apps/token/verify. */
   appSession: string;
@@ -269,7 +271,32 @@ export interface Zend {
    * each with a `pick` token: pass it as a participant to `interaction.create`, which works even
    * for people who haven't used your app yet. Empty if the user backs out.
    */
-  people: { pick(p?: { max?: number; title?: string }): Promise<PickedPerson[]> };
+  people: {
+    pick(p?: { max?: number; title?: string }): Promise<PickedPerson[]>;
+    /**
+     * Add someone the user was just in an interaction with (needs the `connect` permission). The
+     * first add starts a Zend chat between them with a line like "Ada added Ben on {App}." plus
+     * your `note` (≤ 80 chars, plain words, no links); an add back makes them `"friends"`. No
+     * confirm sheet: call it only from the user's own tap. Zend shows "Added {name}." itself.
+     * Works for 7 days after the interaction was created; 30 adds per user per hour.
+     * Errors: `NOT_A_PARTICIPANT`, `PERSON_NOT_FOUND`, `BLOCKED`, `INVALID_NOTE`, `CONNECT_LIMIT`.
+     */
+    connect(p: { appUserId: string; interactionId: string; note?: string }): Promise<{
+      status: "added" | "friends";
+      person: { appUserId: string; name: string; username: string | null; avatar: string | null };
+    }>;
+    /**
+     * Opens Zend's chat with this person over your app; resolves when they close it. Needs
+     * `connect` and an existing chat (`NO_CHAT`), e.g. after `connect`.
+     */
+    chat(p: { appUserId: string }): Promise<{ opened: boolean }>;
+  };
+  /**
+   * The phone's share sheet. `url` must be on your origins or your
+   * `https://app.usezend.app/apps/<slug>` (with params, e.g. `?room=`) or `/i/<id>` link.
+   * Where there's no share sheet, Zend copies the text and link (`"copied"`).
+   */
+  share(p: { text: string; url?: string }): Promise<{ status: "shared" | "dismissed" | "copied" }>;
   /** Let the user report something in your app to Zend. */
   report(p: { reason: "scam" | "unfair_result" | "offensive" | "broken" | "other"; detail?: string;
     interactionId?: string; prizeId?: string }): Promise<void>;
@@ -395,7 +422,12 @@ export function init(opts: InitOptions = {}): Zend {
       },
     },
     report: (p) => t.call("report", p),
-    people: { pick: (p = {}) => t.call("people.pick", p) },
+    people: {
+      pick: (p = {}) => t.call("people.pick", p),
+      connect: (p) => t.call("people.connect", p),
+      chat: (p) => t.call("people.chat", p),
+    },
+    share: (p) => t.call("share", p),
     live: {
       async join(interactionId) {
         const handlers: Record<string, Set<(x: any) => void>> = {

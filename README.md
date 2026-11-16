@@ -66,7 +66,7 @@ Rules Zend enforces:
 - `origins` must be HTTPS with no path, and not on `usezend.app`. Pages outside them open in the browser, not in Zend.
 - Labels and card text must be plain language. Words like *crypto, token, wallet, USDC, gas, escrow* are rejected: your users shouldn't need to know how money moves.
 - Public apps need `custody: "contract"` and go through review. Private apps aren't reviewed and always show **"Made by {you}. Not checked by Zend."**
-- Permissions: `post_card`, `update_bubble`, `pay`, `request_payment`, `create_link`, `email`, `wallet_address`, `contacts`. Users approve `email`, `wallet_address` and `contacts` individually.
+- Permissions: `post_card`, `update_bubble`, `pay`, `request_payment`, `create_link`, `email`, `wallet_address`, `contacts`, `connect`. Users approve `email`, `wallet_address` and `contacts` individually.
 - A transition can be reserved for your server: write `{ "to": "resolved", "serverOnly": true }` instead of `"resolved"`. Zend then refuses that move from a page (error `TRANSITION_SERVER_ONLY`) and accepts it only through the server API with your app key. Use it for anything a player could fake by editing the page, such as declaring a winner.
 
 ## 3. In your page
@@ -168,6 +168,16 @@ note for each payment and a summary each evening, can change or turn it off in S
 Connected apps, and is asked again after 7 days without use. It ends after 90 days, or when your
 app is disconnected or suspended. `zend.allowance.get()` returns the current limits and what's been
 spent today. Money still only moves when the user's phone signs.
+
+## Friends and sharing
+```js
+// After a game: add someone from it (needs "connect"). Starts a Zend chat between you.
+const { status } = await zend.people.connect({ appUserId, interactionId: id, note: "Met in Room KQ7M2D" });
+if (status === "friends") await zend.people.chat({ appUserId }); // Zend's chat, over your app
+// Room links keep their params through sign-in: your entry page gets ?room=KQ7M2D.
+await zend.share({ text: "Come and play", url: "https://app.usezend.app/apps/owambe?room=KQ7M2D" });
+```
+On your server, `zend.blockedPairs(ids)` tells matchmaking who must not share a room.
 
 ## Provable draws
 

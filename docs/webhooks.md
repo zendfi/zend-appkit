@@ -16,6 +16,7 @@ Headers: `x-zend-signature: t=<unix>,v1=<hex>` and `x-zend-event-id: <id>`.
 | `interaction.updated` | The interaction after the change |
 | `payment.completed` | `{ payment_id \| ask_link_id, from, to, amount_usd, reference }` |
 | `link.claimed` | `{ link_id, by, amount_usd, reference }` |
+| `people.connected` | `{ from, to, interaction_id, mutual, at }`: `from` added `to`; `mutual` when `to` had already added `from` |
 
 `from`, `to` and `by` are `appUserId`s (`by` may be null if the collector has never connected
 your app).

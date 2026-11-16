@@ -43,6 +43,7 @@ Unknown top-level fields are rejected.
 | `attest` | `attest` | none |
 | `prize` | `prize.*` | per prize |
 | `unlock` | `unlock.*`, server `/apps/server/unlock/*` | per purchase |
+| `connect` | `people.connect`, `people.chat` | none; the user's own tap, Zend confirms after |
 
 Consent toggles start off. Users can change them in Settings → Connected apps.
 

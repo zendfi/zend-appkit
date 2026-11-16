@@ -28,6 +28,12 @@
 | `POSTING_NOT_ALLOWED` / `APP_MUTED` | cards | User didn't allow posting, or muted you |
 | `CARD_LIMIT` | cards | Daily cap reached |
 | `CHAT_NEEDS_TWO` / `NOTHING_TO_SHOW` | cards | Placement doesn't fit the interaction |
+| `PERSON_NOT_FOUND` / `CANNOT_ADD_YOURSELF` | people | They weren't in that interaction, or it's the user |
+| `BLOCKED` | people | One of them blocked the other. Don't say which |
+| `INVALID_NOTE` | people | Note over 80 characters, has a link, or isn't plain language |
+| `CONNECT_LIMIT` | people | 30 adds an hour reached |
+| `NO_CHAT` | people | No chat with them yet; `people.connect` first |
+| `INVALID_URL` | share | Link isn't on your origins or your Zend app link |
 | `INVALID_MANIFEST` | setup | See `errors[]` |
 | `SLUG_TAKEN` / `INVALID_APP` / `APP_LIMIT` | setup | Pick another slug / fix fields / 10-app max |
 | `INVALID_API_KEY` | server | Wrong or missing `zapp_sk_` key |

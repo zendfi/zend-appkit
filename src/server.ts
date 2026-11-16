@@ -78,6 +78,15 @@ export class ZendServer {
     return this.req("GET", `/apps/server/interactions/${id}`);
   }
 
+  /**
+   * Of these players (2-50 appUserIds), which pairs must not be seated together because one
+   * blocked the other in Zend. Never says who blocked whom; ignores people who haven't
+   * connected your app.
+   */
+  blockedPairs(appUserIds: string[]) {
+    return this.req<{ pairs: [string, string][] }>("POST", "/apps/server/people/blocked", { app_user_ids: appUserIds });
+  }
+
   /** e.g. resolve a game: `{ state: "resolved", data: { winner }, idempotency_key: gameId }` */
   updateInteraction(id: string, p: { state: string; data?: object; idempotency_key: string; expected_version?: number }) {
     return this.req("PATCH", `/apps/server/interactions/${id}`, p);

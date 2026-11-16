@@ -38,6 +38,12 @@ PATCH body: `{ state, data?, idempotency_key, expected_version? }`.
 ### GET `/apps/server/events`
 Last 100 webhook events with `delivered_at`, for catching up after downtime.
 
+### POST `/apps/server/people/blocked`
+Body: `{ app_user_ids }` (2–50). Returns `{ pairs: [[a, b], …] }`: the pairs among them where one
+person blocked the other in Zend. Use it in matchmaking so those two never share a room.
+- Each pair is sorted, so you can't tell who blocked whom.
+- People who haven't connected your app are ignored.
+
 ## Node helper
 
 ```ts
@@ -46,6 +52,7 @@ const zend = new ZendServer(process.env.ZEND_APP_KEY!, "https://api.usezend.app"
 await zend.verifySession(token);
 await zend.createInteraction({ type: "challenge", created_by: "@tunde", participants: ["@danny"] });
 await zend.updateInteraction(id, { state: "resolved", idempotency_key: "g1:end" });
+const { pairs } = await zend.blockedPairs(["zu_…", "zu_…", "zu_…"]);
 ```
 
 ## Endpoints the Zend client uses (for reference)
