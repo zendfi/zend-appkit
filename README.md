@@ -14,7 +14,7 @@ app.usezend.app) and gets the network for free:
 npm install @zendfi/appkit
 ```
 
-Docs: https://docs.usezend.app
+Docs: https://developers.usezend.app
 
 ## 1. Register your app
 

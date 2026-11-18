@@ -1,12 +1,13 @@
 {
   "name": "@zendfi/appkit",
-  "version": "0.7.0",
-  "description": "Build ZApps on Zend, the money network for the internet: sign-in, payments, money links, interactions and cards.",
+  "version": "0.8.0",
+  "description": "Build ZApps on Zend, the money network for the internet: sign-in, payments, money links, interactions and cards. Also runs bot accounts from code.",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js",
-    "./server": "./dist/server.js"
+    "./server": "./dist/server.js",
+    "./bot": "./dist/bot.js"
   },
   "types": "dist/index.d.ts",
   "files": [
@@ -21,5 +22,8 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.5.0"
   }
 }
