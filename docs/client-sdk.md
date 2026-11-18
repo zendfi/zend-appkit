@@ -22,8 +22,8 @@ browser). In `external`, every call rejects with `NOT_IN_ZEND`; show a "Open in 
 
 ## identity.get()
 
-Returns `{ appUserId, username, name, avatar, scopes, appSession }`. Zend apps older than
-SDK 0.6.0 leave out `avatar`.
+Returns `{ appUserId, username, name, avatar, scopes, appSession }`. Older Zend apps leave
+out `avatar`.
 - `appUserId` (`zu_...`) is stable across apps and username changes. Use it as your user key.
 - `username` is `null` until the user picks one.
 - Send `appSession` to your server and call `verifySession` (see [server-api.md](server-api.md)).
@@ -95,8 +95,8 @@ Opens the phone's share sheet. `text` is 1–280 characters. `url` must be on yo
   - keys must match `[a-z][a-z0-9_]{0,31}`;
   - values are at most 256 characters;
   - `interaction`, `start` and `from` are dropped.
-- Resolves `"shared"`, `"dismissed"`, or `"copied"` when the device has no share sheet and Zend
-  copied the link instead.
+- Resolves `{ status }`: `"shared"`, `"dismissed"`, or `"copied"` when the device has no share sheet
+  and Zend copied the link instead.
 
 ## close(result?)
 

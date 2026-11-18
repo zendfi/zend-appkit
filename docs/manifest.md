@@ -28,6 +28,30 @@ Unknown top-level fields are rejected.
 | `results` | `none` \| `app` \| `checked` | no (`none`) | How results are decided; required (not `none`) with `prize` |
 | `resolverKey` | hex string | with `prize` | 32-byte Ed25519 public key that signs prize results |
 
+## App icon
+
+Your icon shows in Discover, the app tray, Zend's confirm sheets and the bar above your app.
+Upload the image itself; Zend checks it and hosts it, so people never load it from your server.
+
+```sh
+zend apps icon my-app ./icon.png          # signed in with `zend login`
+ZEND_APP_KEY=zapp_sk_... zend apps icon my-app ./icon.png   # CI
+zend apps create my-app "My App" --icon ./icon.png
+```
+
+Or `PUT /api/zend/v2/apps/server/icon` with your app key and the image as the body
+(`content-type: image/png`).
+
+- PNG, JPEG or WebP, up to 1 MB.
+- Square, at least 256 × 256 (512 × 512 is ideal). Non-square images are refused, not cropped.
+- Zend resizes it to 512 × 512 and saves a fresh PNG, dropping anything else in the file.
+- **Private apps:** the new icon is live at once.
+- **Public apps:** the new icon is reviewed first; the current one stays until it's approved.
+  `zend apps info` shows a waiting icon.
+- Don't use Zend's logo or another brand's; icons that impersonate are rejected.
+
+Without an icon, Zend shows your app's first letter.
+
 ## Permissions
 
 | Permission | Unlocks | User consent |

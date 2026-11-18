@@ -74,6 +74,31 @@ export class ZendServer {
     return this.req<{ item: string; unlocked: boolean }>("GET", `/apps/server/unlock/access?${q}`);
   }
 
+  /**
+   * Pay-to-read on your server: who's asking (from the `appSession` your page sends) and
+   * whether they hold a receipt for `item`. Returns the verified user when they do. Throws an
+   * error with `code: "NO_ACCESS"` and `status: 403` when they don't, so you can answer with it.
+   *
+   * ```ts
+   * app.get("/content/:item", async (req, res) => {
+   *   try {
+   *     await zend.requireAccess(req.header("x-zend-session")!, req.params.item);
+   *     res.send(await loadArticle(req.params.item));
+   *   } catch (e: any) {
+   *     res.status(e.status ?? 500).json({ error: e.code });
+   *   }
+   * });
+   * ```
+   */
+  async requireAccess(appSession: string, item: string) {
+    const user = await this.verifySession(appSession);
+    const { unlocked } = await this.hasAccess(item, user.app_user_id);
+    if (!unlocked) {
+      throw Object.assign(new Error("No receipt for this item"), { code: "NO_ACCESS", status: 403 });
+    }
+    return user;
+  }
+
   getInteraction(id: string) {
     return this.req("GET", `/apps/server/interactions/${id}`);
   }

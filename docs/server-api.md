@@ -10,7 +10,8 @@ Errors are `{ "error": CODE, "message": "..." }` (see [errors.md](errors.md)).
 
 | Method | Path | Body | Notes |
 |---|---|---|---|
-| POST | `/apps` | `{ slug, name, icon_url? }` | Returns `api_key` and `webhook_secret` **once**. Max 10 apps per account |
+| POST | `/apps` | `{ slug, name }` | Returns `api_key` and `webhook_secret` **once**. Max 10 apps per account. `icon_url` is refused (`ICON_URL_NOT_ACCEPTED`) |
+| PUT | `/apps/:id/icon` | the image | See the App icon section in [manifest.md](manifest.md) |
 | GET | `/apps` | | Your apps |
 | PUT | `/apps/:id/manifest` | manifest JSON | New version; `public` → `in_review` |
 | POST | `/apps/:id/testers` | `{ zendtag }` | Owner is always a tester |
@@ -23,7 +24,7 @@ Slug: 2–31 chars, `a-z 0-9 -`. Lose your API key? Create a new app for now; ke
 `{ "app_session": "..." }` →
 ```json
 { "app_user_id": "zu_...", "username": "tunde", "name": "Tunde", "avatar": null,
-  "scopes": ["profile", "email"], "email": "t@example.com", "address": "0x..." }
+  "human_verified": true, "scopes": ["profile", "email"], "email": "t@example.com", "address": "0x..." }
 ```
 `email` / `address` only when granted. Fails with `INVALID_APP_SESSION` (expired, or issued to
 another app) or `GRANT_REVOKED`.

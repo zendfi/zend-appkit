@@ -240,9 +240,10 @@ export interface Zend {
     get(id: string): Promise<Prize>;
   };
   /**
-   * Pay-to-read. Your server puts an item on sale (`ZendServer.createListing`) and encrypts its
-   * content for that listing; people buy it here and Zend opens it on their device. Nobody
-   * without a receipt can open it, including your server and Zend. Needs the `unlock` permission.
+   * Pay-to-read. Your server puts an item on sale (`ZendServer.createListing`); people buy it
+   * here and get a receipt in the same payment. To deliver the content, send the person's
+   * `appSession` to your server and serve it after `ZendServer.requireAccess` (or `hasAccess`).
+   * Needs the `unlock` permission.
    */
   unlock: {
     /** Price, and whether this person has unlocked it. */
@@ -256,8 +257,9 @@ export interface Zend {
     /** Gives this person's copy to a friend (`pick` token or `@username`). They lose access. */
     gift(p: { item: string; to: string }): Promise<{ item: string; status: "gifted" }>;
     /**
-     * Opens encrypted bytes you fetched (from Walrus or your storage) for `item`. Returns the
-     * plaintext, and `text` when it's UTF-8. `NO_ACCESS` if they haven't unlocked it. Up to 10 MB.
+     * Not available yet: opens Seal-encrypted bytes for `item` on the person's device. Until
+     * Zend turns it on it fails with `UNLOCK_UNAVAILABLE`; serve content from your server after
+     * `requireAccess` instead.
      */
     read(p: { item: string; data: Uint8Array | ArrayBuffer }): Promise<{ data: Uint8Array; text: string | null }>;
   };

@@ -14,8 +14,9 @@ Headers: `x-zend-signature: t=<unix>,v1=<hex>` and `x-zend-event-id: <id>`.
 |---|---|
 | `interaction.created` | The interaction (see [interactions.md](interactions.md)) |
 | `interaction.updated` | The interaction after the change |
-| `payment.completed` | `{ payment_id \| ask_link_id, from, to, amount_usd, reference }` |
+| `payment.completed` | `{ payment_id \| ask_link_id, from, to, amount_usd, reference }`. Ask links paid by Nigerian bank transfer add `method: "bank_transfer"` |
 | `link.claimed` | `{ link_id, by, amount_usd, reference }` |
+| `unlock.listed` / `unlock.bought` / `unlock.gifted` | See [unlock.md](unlock.md#webhooks) |
 | `people.connected` | `{ from, to, interaction_id, mutual, at }`: `from` added `to`; `mutual` when `to` had already added `from` |
 
 `from`, `to` and `by` are `appUserId`s (`by` may be null if the collector has never connected
